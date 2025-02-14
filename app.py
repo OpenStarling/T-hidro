@@ -3,19 +3,20 @@ import numpy as np
 import plotly.graph_objects as go
 import uuid
 
-import streamlit as st
 import requests
 import os
+import subprocess
 
-# Файл для хранения посетителей
+# Файл для хранения списка посетителей
 VISITOR_FILE = "visitors.txt"
+GIT_REPO_URL = "https://github.com/OpenStarling/T-hidro.git"  # Укажи свой GitHub-репозиторий
 
 # Функция для получения IP пользователя
 def get_visitor_ip():
     try:
         response = requests.get("https://api64.ipify.org?format=json")
         return response.json()["ip"]
-    except Exception as e:
+    except Exception:
         return "Не удалось получить IP"
 
 # Функция для загрузки списка посетителей
@@ -25,25 +26,38 @@ def load_visitors():
             return file.read().splitlines()
     return []
 
-# Функция для сохранения посетителей
+# Функция для сохранения IP в файл
 def save_visitor(ip):
     with open(VISITOR_FILE, "a") as file:
         file.write(ip + "\n")
 
-# Загружаем сохраненные IP
+# Функция для обновления GitHub-репозитория
+def update_github():
+    try:
+        subprocess.run(["git", "config", "--global", "user.name", "GitHub Actions Bot"], check=True)
+        subprocess.run(["git", "config", "--global", "user.email", "actions@github.com"], check=True)
+        subprocess.run(["git", "add", VISITOR_FILE], check=True)
+        subprocess.run(["git", "commit", "-m", "Автообновление списка посетителей"], check=True)
+        subprocess.run(["git", "push", "origin", "main"], check=True)
+        st.success("Данные успешно обновлены в GitHub!")
+    except subprocess.CalledProcessError:
+        st.warning("Не удалось обновить данные в GitHub. Проверь настройки доступа.")
+
+# Загружаем список сохраненных IP
 saved_visitors = load_visitors()
 
-# Получаем IP пользователя
+# Получаем IP текущего пользователя
 user_ip = get_visitor_ip()
 
 # Если пользователя еще нет в списке, добавляем
 if user_ip not in saved_visitors:
     save_visitor(user_ip)
     saved_visitors.append(user_ip)
+    update_github()  # Автоматически отправляем изменения в GitHub
 
 # Вывод информации
 st.write(f"**Ваш IP:** `{user_ip}`")
-st.write("### 📌 Посетители сайта:")
+st.write("### 📌 История посещений (сохранено в файле и GitHub):")
 for ip in saved_visitors:
     st.write(f"🔹 {ip}")
 
