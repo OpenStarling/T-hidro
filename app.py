@@ -3,13 +3,17 @@ import numpy as np
 import plotly.graph_objects as go
 import uuid
 
+import streamlit as st
 import requests
 import os
 import subprocess
 
+# Укажи SSH или HTTPS ссылку на свой репозиторий
+GIT_REPO_SSH = "git@github.com:OpenStarling/T-hidrogit"  # Если используешь SSH
+GIT_REPO_HTTPS = "https://<SHA256:yh3bQ5TaT2NtOdGnq9rtjvYLJP9ElKaWRBqtW+spOSk>@github.com/OpenStarling/T-hidro.git"  # Если используешь Token
+
 # Файл для хранения списка посетителей
 VISITOR_FILE = "visitors.txt"
-GIT_REPO_URL = "https://github.com/OpenStarling/T-hidro.git"  # Укажи свой GitHub-репозиторий
 
 # Функция для получения IP пользователя
 def get_visitor_ip():
