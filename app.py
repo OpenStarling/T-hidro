@@ -14,7 +14,7 @@ st.set_page_config(layout="wide")
 st.title(" Configure Separator")
 
 # 🟢 Sidebar: Выбор типа сепаратора
-st.sidebar.image("__pycache__/photo/Страница 1 (5).svg", width=300)
+st.sidebar.image("assets/Страница 1 (5).svg", width=300)  # Новый путь к логотипу
 st.sidebar.title("Separator Settings")
 separator_type = st.sidebar.selectbox(
     "Choose Separator Type",
@@ -22,9 +22,9 @@ separator_type = st.sidebar.selectbox(
 )
 
 # 🟢 Sidebar: Поля ввода параметров
-dm_liquid = st.sidebar.number_input("Liquid Droplet Diameter (µm)", min_value=10, max_value=500, value=140)
-dm_oil = st.sidebar.number_input("Oil Droplet Diameter (µm)", min_value=10, max_value=500, value=200)
-dm_water = st.sidebar.number_input("Water Droplet Diameter (µm)", min_value=10, max_value=500, value=500)
+dm_liquid = st.sidebar.number_input("Liquid Droplet ize (µ)", min_value=10, max_value=500, value=140)
+dm_oil = st.sidebar.number_input("Oil Droplet Size (µ)", min_value=10, max_value=500, value=200)
+dm_water = st.sidebar.number_input("Water Droplet Size (µ)", min_value=10, max_value=500, value=500)
 oil_density = st.sidebar.number_input("Oil Density (lb/ft³)", min_value=30.0, max_value=70.0, value=54.67)
 p = st.sidebar.number_input("Pressure (psia)", min_value=500, max_value=3000, value=1000)
 t = st.sidebar.number_input("Temperature (°R)", min_value=400, max_value=1000, value=600)
@@ -55,24 +55,6 @@ def calculate_twophase_horizontal():
     SR = d / Lss  
     return d, Leff, Lss, Vt, rg, SR
 
-def calculate_threephase_horizontal():
-    Zfactor = 0.85  
-    rg = 2.7 * SGgas * p / (t * Zfactor)
-    Cd = 0.34
-    Vt = 0.015 * ((((oil_density - rg) * dm_liquid) / (rg * Cd)) ** 0.5)
-    d = 500 * ((t * Zfactor * Qg) / p) * ((rg * Cd / ((oil_density - rg) * dm_liquid)) ** 0.5)
-    SR = d / (2 * d)  
-    return d, Vt, rg, SR
-
-def calculate_threephase_vertical():
-    Zfactor = 0.9  
-    rg = 2.7 * SGgas * p / (t * Zfactor)
-    Cd = 0.34
-    Vt = 0.017 * ((((oil_density - rg) * dm_liquid) / (rg * Cd)) ** 0.5)
-    d = 550 * ((t * Zfactor * Qg) / p) * ((rg * Cd / ((oil_density - rg) * dm_liquid)) ** 0.5)
-    SR = d / (2 * d)  
-    return d, Vt, rg, SR
-
 # 🟢 Функция для построения 3D-модели сепаратора
 def create_3d_model(diameter):
     height = diameter * 2  
@@ -88,38 +70,44 @@ def create_3d_model(diameter):
         y=y_grid, 
         z=z_grid, 
         colorscale="blues", 
-        opacity=0.9
+        opacity=0.9,
     ))
 
     fig.update_layout(
         title="3D Separator Model",
         scene=dict(
-            xaxis_title="Length",
-            yaxis_title="Radius",
-            zaxis_title="Height",
-            camera=dict(eye=dict(x=1.2, y=1.2, z=0.8))  # Zoom & Pan for mobile
+            xaxis=dict(visible=False),  # Убираем ось X
+            yaxis=dict(visible=False),  # Убираем ось Y
+            zaxis=dict(visible=False),  # Убираем ось Z
         ),
-        margin=dict(l=10, r=10, b=10, t=40)
+        margin=dict(l=10, r=10, b=10, t=40),
+        showlegend=False,  # Убираем легенду
+        autosize=True
     )
 
     return fig
 
-# 🟢 Запуск расчётов
-if st.sidebar.button("Calculate"):
+
+
+# 🟢 Перемещение кнопки Calculate на главную страницу
+if st.button("Calculate Separator"):
     if separator_type == "Two-Phase Vertical":
         d, Vt, rg, SR = calculate_twophase_vertical()
     elif separator_type == "Two-Phase Horizontal":
         d, Leff, Lss, Vt, rg, SR = calculate_twophase_horizontal()
-    elif separator_type == "Three-Phase Horizontal":
-        d, Vt, rg, SR = calculate_threephase_horizontal()
     else:
-        d, Vt, rg, SR = calculate_threephase_vertical()
+        d, Vt, rg, SR = calculate_twophase_horizontal()
 
-    # 🟢 Вывод результатов
-    st.write(f"**Diameter:** {d:.2f} inches")
-    st.write(f"**Slenderness Ratio (SR):** {SR:.2f}")
-    st.write(f"**Gas Density:** {rg:.2f} lb/ft³")
-    
-    # 🟢 Вывод 3D модели
-    fig = create_3d_model(d)
-    st.plotly_chart(fig, use_container_width=True)
+    # 🟢 Выводим результаты расчётов
+    col1, col2 = st.columns(2)
+
+    with col1:
+        st.markdown("### 📊 Calculation Results")
+        st.markdown(f"**Diameter:** `{d:.2f} inches`")
+        st.markdown(f"**Slenderness Ratio (SR):** `{SR:.2f}`")
+        st.markdown(f"**Gas Density:** `{rg:.2f} lb/ft³`")
+
+    with col2:
+        # 🟢 Выводим 3D-модель в правой колонке
+        fig = create_3d_model(d)
+        st.plotly_chart(fig, use_container_width=True)
