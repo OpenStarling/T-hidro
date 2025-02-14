@@ -3,6 +3,60 @@ import numpy as np
 import plotly.graph_objects as go
 import uuid
 
+import streamlit as st
+import requests
+import os
+
+# Файл для хранения посетителей
+VISITOR_FILE = "visitors.txt"
+
+# Функция для получения IP пользователя
+def get_visitor_ip():
+    try:
+        response = requests.get("https://api64.ipify.org?format=json")
+        return response.json()["ip"]
+    except Exception as e:
+        return "Не удалось получить IP"
+
+# Функция для загрузки списка посетителей
+def load_visitors():
+    if os.path.exists(VISITOR_FILE):
+        with open(VISITOR_FILE, "r") as file:
+            return file.read().splitlines()
+    return []
+
+# Функция для сохранения посетителей
+def save_visitor(ip):
+    with open(VISITOR_FILE, "a") as file:
+        file.write(ip + "\n")
+
+# Загружаем сохраненные IP
+saved_visitors = load_visitors()
+
+# Получаем IP пользователя
+user_ip = get_visitor_ip()
+
+# Если пользователя еще нет в списке, добавляем
+if user_ip not in saved_visitors:
+    save_visitor(user_ip)
+    saved_visitors.append(user_ip)
+
+# Вывод информации
+st.write(f"**Ваш IP:** `{user_ip}`")
+st.write("### 📌 Посетители сайта:")
+for ip in saved_visitors:
+    st.write(f"🔹 {ip}")
+
+
+
+
+
+
+
+
+
+
+
 # 🟢 Генерация уникального ID пользователя для отслеживания
 if "user_id" not in st.session_state:
     st.session_state["user_id"] = str(uuid.uuid4())[:8]
