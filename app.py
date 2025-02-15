@@ -68,7 +68,6 @@ st.markdown("""
         button[data-testid="stNumberInputStepDown"],
         button[data-testid="stNumberInputStepUp"] {
             border: 1px solid #ffffff00 !important; /* Серый */
-            background-color: transparent !important;
             transition: border-color 0.2s ease-in-out, background-color 0.2s ease-in-out;
         }
 
