@@ -98,19 +98,19 @@ separator_type = st.sidebar.selectbox(
 )
 
 # 🔹 Sidebar: Поля ввода параметров
-Qg = st.sidebar.number_input("Gas Flowrate (MMscfd)", min_value=1.0, max_value=500.0, value=6.6)
-Qo = st.sidebar.number_input("Oil Flowrate (BOPD)", min_value=500, max_value=50000, value=2000)
-Qw = st.sidebar.number_input("Water Flowrate (BPD)", min_value=500, max_value=50000, value=2000)
-Po = st.sidebar.number_input("Inlet Pressure (psia)", min_value=500, max_value=5000, value=1000)
-To = st.sidebar.number_input("Inlet Temperature (°R)", min_value=400, max_value=1000, value=600)
-Sg = st.sidebar.number_input("Gas Specific Gravity", min_value=0.5, max_value=1.0, value=0.6)
-SG_oil = st.sidebar.number_input("Oil Specific Gravity", min_value=0.7, max_value=1.0, value=0.876)
-SG_water = st.sidebar.number_input("Water Specific Gravity", min_value=0.9, max_value=1.1, value=1.0)
-dm_liquid = st.sidebar.number_input("Liquid Droplet Size (µ)", min_value=10, max_value=500, value=140)
-dm_oil = st.sidebar.number_input("Oil Droplet Size (µ)", min_value=10, max_value=500, value=200)
-dm_water = st.sidebar.number_input("Water Droplet Size (µ)", min_value=10, max_value=500, value=500)
-tr_oil = st.sidebar.number_input("Oil Retention Time (min)", min_value=0.5, max_value=10.0, value=3.0)
-tr_water = st.sidebar.number_input("Water Retention Time (min)", min_value=0.5, max_value=10.0, value=3.0)
+Qg = st.sidebar.number_input("Gas Flowrate (MMscfd)", min_value=1.0, max_value=99999.0, value=6.6)
+Qo = st.sidebar.number_input("Oil Flowrate (BOPD)", min_value=500, max_value=99999, value=2000)
+Qw = st.sidebar.number_input("Water Flowrate (BPD)", min_value=500, max_value=99999, value=2000)
+Po = st.sidebar.number_input("Inlet Pressure (psia)", min_value=0, max_value=5000, value=1000)
+To = st.sidebar.number_input("Inlet Temperature (°R)", min_value=-100, max_value=1000, value=600)
+Sg = st.sidebar.number_input("Gas Specific Gravity", min_value= 0.55, max_value=1.07, value=0.6)
+SG_oil = st.sidebar.number_input("Oil Specific Gravity", min_value= 0.55, max_value=1.07, value=0.876)
+SG_water = st.sidebar.number_input("Water Specific Gravity",min_value= 0.55, max_value=1.07, value=1.0)
+dm_liquid = st.sidebar.number_input("Liquid Droplet Size in the Gas Phase (µ)", min_value=1, max_value=1000, value=140)
+dm_oil = st.sidebar.number_input("Oil Droplet Size in the Water Phase (µ)", min_value=1, max_value=1000, value=200)
+dm_water = st.sidebar.number_input("Water Droplet Size in the Oil Phase (µ)",  min_value=1, max_value=1000, value=500)
+tr_oil = st.sidebar.number_input("Oil Retention Time (min)", min_value=1.0, max_value=100.0, value=3.0)
+tr_water = st.sidebar.number_input("Water Retention Time (min)", min_value=1.0, max_value=100.0, value=3.0)
 
 # 🔹 Функции расчёта Z-фактора и плотности газа
 def calculate_z_factor(Sg, Po, To):
@@ -179,20 +179,39 @@ if st.button("Calculate Separator"):
         st.markdown(f"**Gas Density:** `{rg:.2f} lb/ft³`")
 
     # 🔹 Функция для построения 3D-модели сепаратора
-    def create_3d_model(diameter):
-        height = diameter * 2  
-        theta = np.linspace(0, 2 * np.pi, 100)
-        x = np.linspace(0, height, 100)
-        theta_grid, x_grid = np.meshgrid(theta, x)
-        y_grid = (diameter / 2) * np.cos(theta_grid)
-        z_grid = (diameter / 2) * np.sin(theta_grid)
-
+     # 🔹 Функция для построения 3D-модели сепаратора
+    def create_3d_model(diameter, orientation="vertical"):
+        if orientation == "vertical":
+            height = diameter * 2  # Total height for vertical separator
+            theta = np.linspace(0, 2 * np.pi, 100)
+            x = np.linspace(0, height, 100)
+            theta_grid, x_grid = np.meshgrid(theta, x)
+            y_grid = (diameter / 2) * np.cos(theta_grid)
+            z_grid = (diameter / 2) * np.sin(theta_grid)
+        else:
+            height = diameter  # For horizontal separator, height is the diameter
+            theta = np.linspace(0, 2 * np.pi, 100)
+            x = np.linspace(0, diameter * 3, 100)  # Length of horizontal separator
+            theta_grid, x_grid = np.meshgrid(theta, x)
+            y_grid = (diameter / 2) * np.cos(theta_grid)
+            z_grid = (diameter / 2) * np.sin(theta_grid)
+    
         fig = go.Figure()
         fig.add_trace(go.Surface(x=x_grid, y=y_grid, z=z_grid, colorscale="blues", opacity=0.9))
+        fig.update_layout(
+            title="3D Separator Model",
+            scene=dict(
+                xaxis=dict(visible=True),
+                yaxis=dict(visible=True),
+                zaxis=dict(visible=True)
+            ),
+            margin=dict(l=10, r=10, b=10, t=40),
+            showlegend=False,
+            autosize=True
+    )
+    return fig
 
-        fig.update_layout(title="3D Separator Model", scene=dict(xaxis=dict(visible=True), yaxis=dict(visible=True), zaxis=dict(visible=True)), margin=dict(l=10, r=10, b=10, t=40), showlegend=False, autosize=True)
 
-        return fig
 
     with col2:
         fig = create_3d_model(d)
