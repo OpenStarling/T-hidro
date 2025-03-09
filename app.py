@@ -68,7 +68,6 @@ def create_3d_model_vertical(diameter):
     fig.add_trace(go.Surface(x=x_grid, y=y_grid, z=z_grid, colorscale="blues", opacity=0.9))
 
     fig.update_layout(
-        title="3D Vertical Separator Model", 
         scene=dict(
             xaxis=dict(visible=True), 
             yaxis=dict(visible=True), 
@@ -79,37 +78,36 @@ def create_3d_model_vertical(diameter):
         autosize=True
     )
     
-    fig.show(config={'displayModeBar': False})
-    
+
     return fig
 
-# 🔹 Функция для построения **горизонтальной** 3D-модели сепаратора
 def create_3d_model_horizontal(diameter, length):
     theta = np.linspace(0, 2 * np.pi, 100)
     z = np.linspace(0, length, 100)
-    theta_grid, x_grid = np.meshgrid(theta, z)
+    theta_grid, z_grid = np.meshgrid(theta, z)
+    
+    x_grid = z_grid  # Используем ось z как длину сепаратора
     y_grid = (diameter / 2) * np.cos(theta_grid)
     z_grid = (diameter / 2) * np.sin(theta_grid)
 
     fig = go.Figure()
-    fig.add_trace(go.Surface(x=x_grid, y=y_grid, z=z_grid, colorscale="blues", opacity=0.9))
+    fig.add_trace(go.Surface(x=x_grid, y=y_grid, z=z_grid, colorscale="blues", opacity=0.9, showscale=False))
 
     fig.update_layout(
-        title="3D Horizontal Separator Model", 
         scene=dict(
-            xaxis=dict(visible=True), 
-            yaxis=dict(visible=True), 
+            xaxis=dict(visible=True),
+            yaxis=dict(visible=True),
             zaxis=dict(visible=True)
-        ), 
-        margin=dict(l=10, r=10, b=10, t=40), 
-        showlegend=False, 
-        autosize=True,
-        showscale=False
+        ),
+        margin=dict(l=10, r=10, b=10, t=40),
+        showlegend=False,
+        autosize=True
     )
-    
-    fig.show(config={'displayModeBar': False})
-    
+
+
     return fig
+
+
 
 st.markdown("###  Separator Sizing & 3D Visualization")
 if st.button("Calculate Separator"):
@@ -135,38 +133,76 @@ else:
     st.markdown('<hr style="width:40%">', unsafe_allow_html=True)
     st.markdown("""
         ### Hi there, I'm Tamirlan Abilzhanov!  
-        **As a petroleum engineering final-year bachelor, worked on implementation of theoretical knowledge for one of the real field tasks.s.
+        **As a petroleum engineering final-year bachelor, worked on implementation of theoretical knowledge for one of the real field tasks.
     
-        - Automating separator sizing from **"Surface Production Operations by Ken Arnold and Maurice Stewart (2008)"**.
-        - Observing separator  **proportions in 3D**.
-        - **Ensuring that separator**  sizes will satisfy production conditions and gas/fluid properties**.
+        - Automating separator sizing from "Surface Production Operations by Ken Arnold and Maurice Stewart (2008)".
+        - Observing separator  proportions in 3D.
+        - Ensuring that separator**  sizes will satisfy production conditions and gas/fluid properties.
     
         ###  What is T-Hydrocarbo?
-        -  Foresees scenarios of production regime**.
-        - Allows **surface facilities planning**.
-        - **All calculations are automated!** 
+        -  Foresees scenarios of production regime.
+        - Allows surface facilities planning.
+        - All calculations are automated! 
         """)
+    st.markdown('<hr style="width:50%">', unsafe_allow_html=True)
     st.video("https://youtu.be/_OluqXlB_yM")
     st.markdown("""
     <style>
         .centered-image {
             display: flex;
             justify-content: center;
+            align-items: center;
         }
-        .st-emotion-cache-1cvow4s img{
+
+        .st-emotion-cache-1cvow4s img {
             border-radius: 15px; /* Закругленные углы */
             max-width: 35%; /* Уменьшенный размер */
             position: absolute;
-            bottom: -15em;
-            right: -5em ;             
+            bottom: -2em;
+            right: -5em;             
         }
+
         .st-emotion-cache-np12kx {
-            width: 20%; 
+            width: 40%; 
+            padding-bottom: 0;
         }
+
+        .st-emotion-cache-1ibsh2c {
+            padding-bottom: 0;
+        }
+
+        /* 🔹 Адаптивный дизайн для планшетов */
+        @media (max-width: 1024px) {
+            .st-emotion-cache-1cvow4s img {
+                max-width: 50%;
+                bottom: -1em;
+                right: 0;
+            }
+        }
+
+        /* 🔹 Адаптивный дизайн для мобильных устройств */
+        @media (max-width: 768px) {
+            .st-emotion-cache-1cvow4s img {
+                max-width: 70%;
+                position: static;
+                margin: 0 auto;
+                display: block;
+            }
+
+            .centered-image img {
+                display: none;
+            }
+            .st-emotion-cache-np12kx {
+            width: 80%; 
+            padding-bottom: 0;
+        }
+        }
+
     </style>
 """, unsafe_allow_html=True)
 
-    st.markdown('<div class="centered-image"><img  src="https://i.imgur.com/qDpKpyT.png"></div>', unsafe_allow_html=True)
+    st.markdown('<div class="centered-image"><img src="https://i.imgur.com/qDpKpyT.png"></div>', unsafe_allow_html=True)
+
         
         
         
