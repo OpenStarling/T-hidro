@@ -1,4 +1,8 @@
 i{
   color: #ffffff00;
+  position: absolute;
+  bottom: 0;
+  right: 0;
+  border-top: solid 1px #77777700;
   border-radius: 10px;
 }
