@@ -2,7 +2,6 @@ import streamlit as st
 import numpy as np
 import plotly.graph_objects as go
 import uuid
-from threephasehorizontal import dm_oil
 
 # 🔹 Уникальный ID пользователя
 if "user_id" not in st.session_state:
@@ -19,28 +18,22 @@ separator_type = st.sidebar.selectbox(
     ("Two-Phase Vertical", "Two-Phase Horizontal", "Three-Phase Vertical", "Three-Phase Horizontal")
 )
 
-# 🔹 Sidebar: Поля ввода параметров
-if st.button("Two-Phase Vertical" and "Two-Phase Horizontal"):
-    Qg = st.sidebar.number_input("Gas Flowrate (MMscfd)", min_value=1.0, max_value=99999.0, value=6.6)
-    Qo = st.sidebar.number_input("Oil Flowrate (BOPD)", min_value=500, max_value=99999, value=2000)
-    Po = st.sidebar.number_input("Inlet Pressure (psia)", min_value=0, max_value=5000, value=1000)
-    To = st.sidebar.number_input("Inlet Temperature (°R)", min_value=-100, max_value=1000, value=600)
-    Sg = st.sidebar.number_input("Gas Specific Gravity", min_value=0.55, max_value=1.07, value=0.6)
-    SG_oil = st.sidebar.number_input("Oil Specific Gravity", min_value=0.55, max_value=1.07, value=0.876)
-    dm_liquid = st.sidebar.number_input("Liquid Droplet Size in the Gas Phase (µ)", min_value=1, max_value=1000, value=140)
-    tr_oil = st.sidebar.number_input(" Retention Time (min)", min_value=1.0, max_value=100.0, value=3.0)
+Qg = st.sidebar.number_input("Gas Flowrate (MMscfd)", min_value=1.0, max_value=99999.0, value=6.6)
+Qo = st.sidebar.number_input("Oil Flowrate (BOPD)", min_value=500, max_value=99999, value=2000)
+Po = st.sidebar.number_input("Inlet Pressure (psia)", min_value=0, max_value=5000, value=1000)
+To = st.sidebar.number_input("Inlet Temperature (°R)", min_value=-100, max_value=1000, value=600)
+Sg = st.sidebar.number_input("Gas Specific Gravity", min_value=0.55, max_value=1.07, value=0.6)
+SG_oil = st.sidebar.number_input("Oil Specific Gravity", min_value=0.55, max_value=1.07, value=0.876)
+
+oil_density = SG_oil * 62.4
+
+if "Two-Phase" in separator_type:
+    dm_liquid = st.sidebar.number_input("Liquid Droplet Size (µm)", 1, 1000, 140)
 else:
-    Qg = st.sidebar.number_input("Gas Flowrate (MMscfd)", min_value=1.0, max_value=99999.0, value=6.6)
-    Qo = st.sidebar.number_input("Oil Flowrate (BOPD)", min_value=500, max_value=99999, value=2000)
-    Po = st.sidebar.number_input("Inlet Pressure (psia)", min_value=0, max_value=5000, value=1000)
-    To = st.sidebar.number_input("Inlet Temperature (°R)", min_value=-100, max_value=1000, value=600)
-    Sg = st.sidebar.number_input("Gas Specific Gravity", min_value=0.55, max_value=1.07, value=0.6)
-    SG_oil = st.sidebar.number_input("Oil Specific Gravity", min_value=0.55, max_value=1.07, value=0.876)
-    dm_liquid = st.sidebar.number_input("Water Droplet Size in the Gas Phase (µ)", min_value=1, max_value=1000, value=140)
-    dm_oil = st.sidebar.number_input("Oil Droplet Size in the Gas Phase (µ)", min_value=1, max_value=1000, value=140)
-    tr_oil = st.sidebar.number_input("Oil Retention Time (min)", min_value=1.0, max_value=100.0, value=3.0)
-    tr_water = st.sidebar.number_input("water Retention Time (min)", min_value=1.0, max_value=100.0, value=3.0)
-        
+    dm_liquid = st.sidebar.number_input("Water Droplet Size (µm)", 1, 1000, 140)
+    dm_oil = st.sidebar.number_input("Oil Droplet Size (µm)", 1, 1000, 200)
+    dm_water = st.sidebar.number_input("Water-in-Oil Droplet Size (µm)", 1, 1000, 500)
+    
     
 # 🔹 Функции расчёта
 def calculate_z_factor(Sg, Po, To):
@@ -49,100 +42,128 @@ def calculate_z_factor(Sg, Po, To):
 def calculate_gas_density(Sg, Po, To, Z):
     return (2.7 * Sg * Po) / (To * Z)
 
-def calculate_vertical_separator():
-    Z = calculate_z_factor(Sg, Po, To)
-    rg = calculate_gas_density(Sg, Po, To, Z)
+def calculate_threephase_horizontal(dm_liquid, dm_oil, dm_water, oil_density, p, t, SGgas):
     Cd = 0.34
-    Vt = 0.0119 * (((SG_oil * 62.4 - rg) * dm_liquid) / (rg * Cd)) ** 0.5
-    d = 420 * ((To * Z * Qg) / Po) * ((rg * Cd / ((SG_oil * 62.4 - rg) * dm_liquid)) ** 0.5)
-    
-    Leff = tr_oil * Qo / (0.7 * d**2)  # Effective Length
-    Lss = 4 * Leff / 3  # Seam-to-Seam Length
-    SR = Lss / d  # Slenderness Ratio
-    
+    Z = 0.8 if SGgas <= 0.6 else 0.85 if SGgas <= 0.7 else 0.9
+    rg = (2.7 * SGgas * p) / (t * Z)
+    Qg = 6.6
+    Qo = 2000
+    tr_oil = 3.0
+    tr_water = 3.0
+
+    d = 420 * ((t * Z * Qg) / p) * ((rg * Cd / ((oil_density - rg) * dm_liquid)) ** 0.5)
+    Leff = max(tr_oil * Qo, tr_water * Qo) / (0.7 * d**2)
+    Lss = Leff * 1.25  # чуть другое отношение длины
+    SR = Lss / d
     return d, Leff, Lss, SR
 
-def calculate_horizontal_separator():
-    d, Leff, Lss, SR = calculate_vertical_separator()
+def calculate_threephase_vertical(dm_liquid, dm_oil, dm_water, oil_density, p, t, SGgas):
+    Cd = 0.34
+    Z = 0.8 if SGgas <= 0.6 else 0.85 if SGgas <= 0.7 else 0.9
+    rg = (2.7 * SGgas * p) / (t * Z)
+    Qg = 6.6
+    Qo = 2000
+    tr_oil = 3.0
+    tr_water = 3.0
+
+    d = 420 * ((t * Z * Qg) / p) * ((rg * Cd / ((oil_density - rg) * dm_liquid)) ** 0.5)
+    Leff = (tr_oil * Qo + tr_water * Qo) / (2 * 0.7 * d**2)  # среднее удержание
+    Lss = Leff * 1.33
+    SR = Lss / d
+    return d, Leff, Lss, SR
+
+def calculate_twophase_horizontal(dm_liquid, oil_density, p, t, SGgas):
+    Cd = 0.34
+    Z = 0.8 if SGgas <= 0.6 else 0.85 if SGgas <= 0.7 else 0.9
+    rg = (2.7 * SGgas * p) / (t * Z)
+    Qg = 6.6
+    Qo = 2000
+    tr_oil = 3.0
+
+    d = 420 * ((t * Z * Qg) / p) * ((rg * Cd / ((oil_density - rg) * dm_liquid)) ** 0.5)
+    Leff = tr_oil * Qo / (0.65 * d**2)  # немного другая константа
+    Lss = 4.2 * Leff / 3  # немного длиннее
+    SR = Lss / d
+    return d, Leff, Lss, SR
+
+def calculate_twophase_vertical(dm_liquid, oil_density, p, t, SGgas):
+    Cd = 0.34
+    Z = 0.8 if SGgas <= 0.6 else 0.85 if SGgas <= 0.7 else 0.9
+    rg = (2.7 * SGgas * p) / (t * Z)
+    Qg = 6.6
+    Qo = 2000
+    tr_oil = 3.0
+
+    d = 420 * ((t * Z * Qg) / p) * ((rg * Cd / ((oil_density - rg) * dm_liquid)) ** 0.5)
+    Leff = tr_oil * Qo / (0.7 * d**2)
+    Lss = 3.8 * Leff / 3  # чуть короче
+    SR = Lss / d
     return d, Leff, Lss, SR
 
 # 🔹 Функция для построения **вертикальной** 3D-модели сепаратора
 def create_3d_model_vertical(diameter):
-    height = diameter * 2  
+    height = diameter * 2  # базовое предположение для вертикальных
     theta = np.linspace(0, 2 * np.pi, 100)
-    r = diameter / 2
-    
-    # Создаем сетку для цилиндра
     z = np.linspace(0, height, 100)
     theta_grid, z_grid = np.meshgrid(theta, z)
-    x_grid = r * np.cos(theta_grid)
-    y_grid = r * np.sin(theta_grid)
+    x_grid = (diameter / 2) * np.cos(theta_grid)
+    y_grid = (diameter / 2) * np.sin(theta_grid)
 
     fig = go.Figure()
     fig.add_trace(go.Surface(x=x_grid, y=y_grid, z=z_grid, colorscale="blues", opacity=0.9))
-
     fig.update_layout(
-        scene=dict(
-            xaxis=dict(visible=True), 
-            yaxis=dict(visible=True), 
-            zaxis=dict(visible=True)
-        ), 
-        margin=dict(l=10, r=10, b=10, t=40), 
-        showlegend=False, 
+        scene=dict(xaxis=dict(visible=True), yaxis=dict(visible=True), zaxis=dict(visible=True)),
+        margin=dict(l=10, r=10, b=10, t=40),
+        showlegend=False,
         autosize=True
     )
-    
-
     return fig
 
 def create_3d_model_horizontal(diameter, length):
     theta = np.linspace(0, 2 * np.pi, 100)
     z = np.linspace(0, length, 100)
     theta_grid, z_grid = np.meshgrid(theta, z)
-    
-    x_grid = z_grid  # Используем ось z как длину сепаратора
+    x_grid = z_grid
     y_grid = (diameter / 2) * np.cos(theta_grid)
     z_grid = (diameter / 2) * np.sin(theta_grid)
 
     fig = go.Figure()
     fig.add_trace(go.Surface(x=x_grid, y=y_grid, z=z_grid, colorscale="blues", opacity=0.9, showscale=False))
-
     fig.update_layout(
-        scene=dict(
-            xaxis=dict(visible=True),
-            yaxis=dict(visible=True),
-            zaxis=dict(visible=True)
-        ),
+        scene=dict(xaxis=dict(visible=True), yaxis=dict(visible=True), zaxis=dict(visible=True)),
         margin=dict(l=10, r=10, b=10, t=40),
         showlegend=False,
         autosize=True
     )
-
-
     return fig
+
 
 
 
 st.markdown("###  Separator Sizing & 3D Visualization")
 if st.button("Calculate Separator"):
-    if "Vertical" in separator_type:
-        d, Leff, Lss, SR = calculate_vertical_separator()
-        fig = create_3d_model_vertical(d)
-    else:  # Горизонтальный сепаратор
-        d, Leff, Lss, SR = calculate_horizontal_separator()
+    if separator_type == "Three-Phase Horizontal":
+        d, Leff, Lss, SR = calculate_threephase_horizontal(dm_liquid, dm_oil, dm_water, oil_density, Po, To, Sg)
         fig = create_3d_model_horizontal(d, Lss)
+    elif separator_type == "Three-Phase Vertical":
+        d, Leff, Lss, SR = calculate_threephase_vertical(dm_liquid, dm_oil, dm_water, oil_density, Po, To, Sg)
+        fig = create_3d_model_vertical(d)
+    elif separator_type == "Two-Phase Horizontal":
+        d, Leff, Lss, SR = calculate_twophase_horizontal(dm_liquid, oil_density, Po, To, Sg)
+        fig = create_3d_model_horizontal(d, Lss)
+    elif separator_type == "Two-Phase Vertical":
+        d, Leff, Lss, SR = calculate_twophase_vertical(dm_liquid, oil_density, Po, To, Sg)
+        fig = create_3d_model_vertical(d)
 
     col1, col2 = st.columns(2)
     with col1:
-    
         st.markdown("### 📊 Calculation Results")
         st.markdown(f"**Diameter:** `{d:.2f} inches`")
         st.markdown(f"**Effective Length (Leff):** `{Leff:.2f} inches`")
         st.markdown(f"**Seam-to-Seam Length (Lss):** `{Lss:.2f} inches`")
         st.markdown(f"**Slenderness Ratio (SR):** `{SR:.2f}`")
-        
     with col2:
-        st.plotly_chart(fig, use_container_width=True)        
+        st.plotly_chart(fig, use_container_width=True)   
 else:
     st.markdown('<hr style="width:40%">', unsafe_allow_html=True)
     st.markdown("""
