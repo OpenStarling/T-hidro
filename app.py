@@ -2,6 +2,7 @@ import streamlit as st
 import numpy as np
 import plotly.graph_objects as go
 import uuid
+from threephasehorizontal import dm_oil
 
 # 🔹 Уникальный ID пользователя
 if "user_id" not in st.session_state:
@@ -19,15 +20,28 @@ separator_type = st.sidebar.selectbox(
 )
 
 # 🔹 Sidebar: Поля ввода параметров
-Qg = st.sidebar.number_input("Gas Flowrate (MMscfd)", min_value=1.0, max_value=99999.0, value=6.6)
-Qo = st.sidebar.number_input("Oil Flowrate (BOPD)", min_value=500, max_value=99999, value=2000)
-Po = st.sidebar.number_input("Inlet Pressure (psia)", min_value=0, max_value=5000, value=1000)
-To = st.sidebar.number_input("Inlet Temperature (°R)", min_value=-100, max_value=1000, value=600)
-Sg = st.sidebar.number_input("Gas Specific Gravity", min_value=0.55, max_value=1.07, value=0.6)
-SG_oil = st.sidebar.number_input("Oil Specific Gravity", min_value=0.55, max_value=1.07, value=0.876)
-dm_liquid = st.sidebar.number_input("Liquid Droplet Size in Gas Phase (µ)", min_value=1, max_value=1000, value=140)
-tr_oil = st.sidebar.number_input("Oil Retention Time (min)", min_value=1.0, max_value=100.0, value=3.0)
-
+if st.button("Two-Phase Vertical" and "Two-Phase Horizontal"):
+    Qg = st.sidebar.number_input("Gas Flowrate (MMscfd)", min_value=1.0, max_value=99999.0, value=6.6)
+    Qo = st.sidebar.number_input("Oil Flowrate (BOPD)", min_value=500, max_value=99999, value=2000)
+    Po = st.sidebar.number_input("Inlet Pressure (psia)", min_value=0, max_value=5000, value=1000)
+    To = st.sidebar.number_input("Inlet Temperature (°R)", min_value=-100, max_value=1000, value=600)
+    Sg = st.sidebar.number_input("Gas Specific Gravity", min_value=0.55, max_value=1.07, value=0.6)
+    SG_oil = st.sidebar.number_input("Oil Specific Gravity", min_value=0.55, max_value=1.07, value=0.876)
+    dm_liquid = st.sidebar.number_input("Liquid Droplet Size in the Gas Phase (µ)", min_value=1, max_value=1000, value=140)
+    tr_oil = st.sidebar.number_input(" Retention Time (min)", min_value=1.0, max_value=100.0, value=3.0)
+else:
+    Qg = st.sidebar.number_input("Gas Flowrate (MMscfd)", min_value=1.0, max_value=99999.0, value=6.6)
+    Qo = st.sidebar.number_input("Oil Flowrate (BOPD)", min_value=500, max_value=99999, value=2000)
+    Po = st.sidebar.number_input("Inlet Pressure (psia)", min_value=0, max_value=5000, value=1000)
+    To = st.sidebar.number_input("Inlet Temperature (°R)", min_value=-100, max_value=1000, value=600)
+    Sg = st.sidebar.number_input("Gas Specific Gravity", min_value=0.55, max_value=1.07, value=0.6)
+    SG_oil = st.sidebar.number_input("Oil Specific Gravity", min_value=0.55, max_value=1.07, value=0.876)
+    dm_liquid = st.sidebar.number_input("Water Droplet Size in the Gas Phase (µ)", min_value=1, max_value=1000, value=140)
+    dm_oil = st.sidebar.number_input("Oil Droplet Size in the Gas Phase (µ)", min_value=1, max_value=1000, value=140)
+    tr_oil = st.sidebar.number_input("Oil Retention Time (min)", min_value=1.0, max_value=100.0, value=3.0)
+    tr_water = st.sidebar.number_input("water Retention Time (min)", min_value=1.0, max_value=100.0, value=3.0)
+        
+    
 # 🔹 Функции расчёта
 def calculate_z_factor(Sg, Po, To):
     return 0.8 if Sg <= 0.6 else 0.85 if Sg <= 0.7 else 0.9 if Sg <= 0.8 else 0.95
@@ -133,11 +147,11 @@ else:
     st.markdown('<hr style="width:40%">', unsafe_allow_html=True)
     st.markdown("""
         ### Hi there, I'm Tamirlan Abilzhanov!  
-        **As a petroleum engineering final-year bachelor, worked on implementation of theoretical knowledge for one of the real field tasks.
+        As a petroleum engineering final-year bachelor, worked on implementation of theoretical knowledge for one of the real field tasks.
     
         - Automating separator sizing from "Surface Production Operations by Ken Arnold and Maurice Stewart (2008)".
         - Observing separator  proportions in 3D.
-        - Ensuring that separator**  sizes will satisfy production conditions and gas/fluid properties.
+        - Ensuring that separator  sizes will satisfy production conditions and gas/fluid properties.
     
         ###  What is T-Hydrocarbo?
         -  Foresees scenarios of production regime.
