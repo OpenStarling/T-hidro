@@ -117,6 +117,11 @@ def create_3d_model_vertical(diameter):
         showlegend=False,
         autosize=True
     )
+    fig.update_layout(
+    modebar=dict(remove=[ "toImage", "zoom3d", "pan3d", "resetCameraDefault3d", "orbitRotation",
+        "tableRotation", "zoomIn2d", "zoomOut2d", "autoScale2d", "resetScale2d"
+   ])
+)
     return fig
 
 def create_3d_model_horizontal(diameter, length):
@@ -135,6 +140,9 @@ def create_3d_model_horizontal(diameter, length):
         showlegend=False,
         autosize=True
     )
+    fig.update_layout(modebar=dict(remove=[ "toImage", "zoom3d", "pan3d", "resetCameraDefault3d", "orbitRotation","tableRotation", "zoomIn2d", "zoomOut2d", "autoScale2d", "resetScale2d"])
+    
+    )    
     return fig
 
 
